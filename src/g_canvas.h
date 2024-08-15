@@ -456,7 +456,7 @@ EXTERN void text_drawborder(t_text *x, t_glist *glist, const char *tag,
 EXTERN void text_eraseborder(t_text *x, t_glist *glist, const char *tag);
 EXTERN int text_xpix(t_text *x, t_glist *glist);
 EXTERN int text_ypix(t_text *x, t_glist *glist);
-extern const t_widgetbehavior text_widgetbehavior;
+EXTERN const t_widgetbehavior text_widgetbehavior;
 
 /* -------------------- functions on rtexts ------------------------- */
 #define RTEXT_DOWN 1

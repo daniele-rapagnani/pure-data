@@ -457,7 +457,7 @@ int sys_open(const char *path, int oflag, ...)
         fd = sys_fs_open(pathbuf, oflag, mode);
     }
     else
-        fd = sys_fs_open(pathbuf, oflag);
+        fd = sys_fs_open(pathbuf, oflag, 0);
     return fd;
 }
 
@@ -565,6 +565,10 @@ int sys_fs_fseek(FILE* fd, long offset, int origin)
     _C(g_fs_fseek_func, fd, offset, origin);
     return fseek(fd, offset, origin);
 }
+
+#ifndef _WIN32
+#define tell(fd) lseek(fd, 0, SEEK_CUR)
+#endif
 
 long sys_fs_tell(int fd)
 {

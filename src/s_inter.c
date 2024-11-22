@@ -1308,8 +1308,8 @@ static int sys_do_startgui(const char *libdir)
             files to try to fill fds 0 through 2.  (I tried using dup()
             instead, which would seem the logical way to do this, but couldn't
             get it to work.) */
-        int burnfd1 = sys_fs_open("/dev/null", 0), burnfd2 = sys_fs_open("/dev/null", 0),
-            burnfd3 = sys_fs_open("/dev/null", 0);
+        int burnfd1 = sys_fs_open("/dev/null", 0, 0), burnfd2 = sys_fs_open("/dev/null", 0, 0),
+            burnfd3 = sys_fs_open("/dev/null", 0, 0);
         if (burnfd1 > 2)
             sys_fs_close(burnfd1);
         if (burnfd2 > 2)

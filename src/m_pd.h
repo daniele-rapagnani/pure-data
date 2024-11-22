@@ -639,7 +639,8 @@ EXTERN FILE* sys_fs_fdopen(int fd, const char* mode);
 EXTERN int sys_fs_fflush(FILE* fd);
 EXTERN void sys_fprintf_wrapper(char character, void* arg);
 
-#define sys_fs_fprintf(f, format, ...) fctprintf(&sys_fprintf_wrapper, f, format, __VA_ARGS__)
+#define sys_va_args_wrap(...) , ##__VA_ARGS__
+#define sys_fs_fprintf(f, format, ...) fctprintf(&sys_fprintf_wrapper, f, format sys_va_args_wrap(__VA_ARGS__))
 
 #endif
 

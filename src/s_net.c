@@ -14,6 +14,8 @@
 #include <sys/time.h>
 #endif
 
+int sys_fs_close(int fd);
+
     /* Windows XP winsock doesn't provide inet_ntop */
 #ifdef _WIN32
 const char* INET_NTOP(int af, const void *src, char *dst, socklen_t size) {

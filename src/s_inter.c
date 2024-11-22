@@ -1308,14 +1308,14 @@ static int sys_do_startgui(const char *libdir)
             files to try to fill fds 0 through 2.  (I tried using dup()
             instead, which would seem the logical way to do this, but couldn't
             get it to work.) */
-        int burnfd1 = open("/dev/null", 0), burnfd2 = open("/dev/null", 0),
-            burnfd3 = open("/dev/null", 0);
+        int burnfd1 = sys_fs_open("/dev/null", 0), burnfd2 = sys_fs_open("/dev/null", 0),
+            burnfd3 = sys_fs_open("/dev/null", 0);
         if (burnfd1 > 2)
-            close(burnfd1);
+            sys_fs_close(burnfd1);
         if (burnfd2 > 2)
-            close(burnfd2);
+            sys_fs_close(burnfd2);
         if (burnfd3 > 2)
-            close(burnfd3);
+            sys_fs_close(burnfd3);
 #endif
 
         /* get addrinfo list using hostname & port */
@@ -1530,9 +1530,9 @@ static int sys_do_startgui(const char *libdir)
             {
                 if (stdinpipe[0] != 0)
                 {
-                    close (0);
+                    sys_fs_close (0);
                     dup2(stdinpipe[0], 0);
-                    close(stdinpipe[0]);
+                    sys_fs_close(stdinpipe[0]);
                 }
             }
 #endif /* NOT __APPLE__ */
@@ -1682,9 +1682,9 @@ void sys_setrealtime(const char *libdir)
             if (pipe9[1] != 0)
             {
                 dup2(pipe9[0], 0);
-                close(pipe9[0]);
+                sys_fs_close(pipe9[0]);
             }
-            close(pipe9[1]);
+            sys_fs_close(pipe9[1]);
 
             if (sys_verbose) fprintf(stderr, "%s\n", cmdbuf);
             execl(cmdbuf, cmdbuf, (char*)0);
@@ -1694,7 +1694,7 @@ void sys_setrealtime(const char *libdir)
         else                            /* we're the parent */
         {
             sys_set_priority(MODE_RT);
-            close(pipe9[0]);
+            sys_fs_close(pipe9[0]);
                 /* set close-on-exec so that watchdog will see an EOF when we
                 close our copy - otherwise it might hang waiting for some
                 stupid child process (as seems to happen if jackd auto-starts

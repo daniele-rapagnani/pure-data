@@ -10,22 +10,22 @@
 
 static void pd_tilde_putfloat(float f, FILE *fd)
 {
-    putc(A_PDFLOAT, fd);
-    fwrite(&f, sizeof(f), 1, fd);
+    sys_fs_putc(A_PDFLOAT, fd);
+    sys_fs_fwrite(&f, sizeof(f), 1, fd);
 }
 
 static void pd_tilde_putsymbol(t_symbol *s, FILE *fd)
 {
     const char *sp = s->s_name;
-    putc(A_PDSYMBOL, fd);
+    sys_fs_putc(A_PDSYMBOL, fd);
     do
-        putc(*sp, fd);
+        sys_fs_putc(*sp, fd);
     while (*sp++);
 }
 
 static void pd_tilde_putsemi(FILE *fd)
 {
-    putc(A_PDSEMI, fd);
+    sys_fs_putc(A_PDSEMI, fd);
 }
 
 static int pd_tilde_getatom(t_atom *ap, FILE *fd)
@@ -33,7 +33,7 @@ static int pd_tilde_getatom(t_atom *ap, FILE *fd)
     char buf[MAXPDSTRING];
     while (1)
     {
-        int type = getc(fd), fill;
+        int type = sys_fs_getc(fd), fill;
         float f;
         switch (type)
         {
@@ -43,7 +43,7 @@ static int pd_tilde_getatom(t_atom *ap, FILE *fd)
             SETSEMI(ap);
             return (1);
         case A_PDFLOAT:
-            if (fread(&f, sizeof(f), 1, fd) >= 1)
+            if (sys_fs_fread(&f, sizeof(f), 1, fd) >= 1)
             {
                 SETFLOAT(ap, f);
                 return (1);
@@ -52,7 +52,7 @@ static int pd_tilde_getatom(t_atom *ap, FILE *fd)
         case A_PDSYMBOL:
             for (fill = 0; fill < MAXPDSTRING; fill++)
             {
-                int c = getc(fd);
+                int c = sys_fs_getc(fd);
                 if (c == EOF)
                     return (0);
                 else buf[fill] = c;

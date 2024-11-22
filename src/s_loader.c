@@ -262,7 +262,7 @@ static int sys_do_load_lib_from_file(int fd,
     void*dlobj = NULL;
 #endif
         /* close dangling filedescriptor */
-    close(fd);
+    sys_fs_close(fd);
 
         /* attempt to open the library and call the setup function */
 
@@ -612,7 +612,7 @@ static t_pd *do_create_abstraction(t_symbol*s, int argc, t_atom *argv)
             (fd = canvas_open(canvas, classslashclass, ".pd",
                   dirbuf, &nameptr, MAXPDSTRING, 0)) >= 0)
         {
-            close(fd);
+            sys_fs_close(fd);
             canvas_setargs(argc, argv);
 
             binbuf_evalfile(gensym(nameptr), gensym(dirbuf));
@@ -649,7 +649,7 @@ static int sys_do_load_abs(t_canvas *canvas, const char *objectname,
               dirbuf, &nameptr, MAXPDSTRING, 1)) >= 0)
     {
         t_class*c=0;
-        close(fd);
+        sys_fs_close(fd);
             /* found an abstraction, now register it as a new pseudo-class */
         class_set_extern_dir(gensym(dirbuf));
         if((c=class_new(gensym(objectname),

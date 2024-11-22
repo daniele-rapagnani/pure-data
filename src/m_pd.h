@@ -80,6 +80,7 @@ typedef unsigned __int64  uint64_t;
 
 /* for FILE, needed by sys_fopen() and sys_fclose() only */
 #include <stdio.h>
+#include <printf.h>
 
 #define MAXPDSTRING 1000        /* use this for anything you want */
 #define MAXPDARG 5              /* max number of args we can typecheck today */
@@ -600,6 +601,47 @@ EXTERN int sys_open(const char *path, int oflag, ...);
 EXTERN int sys_close(int fd);
 EXTERN FILE *sys_fopen(const char *filename, const char *mode);
 EXTERN int sys_fclose(FILE *stream);
+
+#ifdef PDCUSTOMFS
+
+typedef int (*t_fsopen)(const char* filename, int flags, int mode);
+typedef int (*t_fsseek)(int fd, long offset, int origin);
+typedef long (*t_fstell)(int fd);
+typedef size_t (*t_fswrite)(void* data, size_t len, int fd);
+typedef size_t (*t_fsread)(void* data, size_t len, int fd);
+typedef int (*t_fsclose)(int fd);
+
+typedef FILE* (*t_fsfopen)(const char* filename, const char* mode);
+typedef int (*t_fsfseek)(FILE* fd, long offset, int origin);
+typedef size_t (*t_fsftell)(FILE* fd);
+typedef size_t (*t_fsfwrite)(void* data, size_t len, size_t count, FILE* fd);
+typedef size_t (*t_fsfread)(void* data, size_t len, size_t count, FILE* fd);
+typedef int (*t_fsfflush)(FILE* fd);
+typedef FILE* (*t_fsfdopen)(int fd, const char* mode);
+typedef int (*t_fsfclose)(FILE* fd);
+
+EXTERN int sys_fs_open(const char* filename, int mode, int flags);
+EXTERN int sys_fs_seek(int fd, long offset, int origin);
+EXTERN long sys_fs_tell(int fd);
+EXTERN size_t sys_fs_write(int fd, void* data, size_t len);
+EXTERN size_t sys_fs_read(int fd, void* data, size_t len);
+EXTERN int sys_fs_close(int fd);
+
+EXTERN FILE* sys_fs_fopen(const char* filename, const char* mode);
+EXTERN int sys_fs_fseek(FILE* fd, long offset, int origin);
+EXTERN size_t sys_fs_ftell(FILE* fd);
+EXTERN size_t sys_fs_fwrite(void* data, size_t len, size_t count, FILE* fd);
+EXTERN size_t sys_fs_fread(void* data, size_t len, size_t count, FILE* fd);
+EXTERN int sys_fs_putc(int c, FILE* fd);
+EXTERN int sys_fs_getc(FILE* fd);
+EXTERN int sys_fs_fclose(FILE* fd);
+EXTERN FILE* sys_fs_fdopen(int fd, const char* mode);
+EXTERN int sys_fs_fflush(FILE* fd);
+EXTERN void sys_fprintf_wrapper(char character, void* arg);
+
+#define sys_fs_fprintf(f, format, ...) fctprintf(&sys_fprintf_wrapper, f, format, __VA_ARGS__)
+
+#endif
 
 /* ------------  threading ------------------- */
 EXTERN void sys_lock(void);

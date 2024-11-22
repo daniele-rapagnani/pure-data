@@ -46,9 +46,9 @@ void sys_bashfilename(const char *from, char *to)
     char c;
     while ((c = *from++))
     {
-#ifdef _WIN32
-        if (c == '/') c = '\\';
-#endif
+//#ifdef _WIN32
+//        if (c == '/') c = '\\';
+//#endif
         *to++ = c;
     }
     *to = 0;
@@ -407,26 +407,28 @@ int sys_open(const char *path, int oflag, ...)
     char pathbuf[MAXPDSTRING];
     wchar_t ucs2path[MAXPDSTRING];
     sys_bashfilename(path, pathbuf);
-    u8_utf8toucs2(ucs2path, MAXPDSTRING, pathbuf, MAXPDSTRING-1);
+    //u8_utf8toucs2(ucs2path, MAXPDSTRING, pathbuf, MAXPDSTRING-1);
     /* For the create mode, Win32 does not have the same possibilities,
      * so we ignore the argument and just hard-code read/write. */
     if (oflag & O_CREAT)
-        fd = _wopen(ucs2path, oflag | O_BINARY, _S_IREAD | _S_IWRITE);
+        fd = sys_fs_open(pathbuf, oflag | O_BINARY, _S_IREAD | _S_IWRITE);
     else
-        fd = _wopen(ucs2path, oflag | O_BINARY);
+        fd = sys_fs_open(pathbuf, oflag | O_BINARY, 0);
     return fd;
 }
 
 FILE *sys_fopen(const char *filename, const char *mode)
 {
     char namebuf[MAXPDSTRING];
-    wchar_t ucs2buf[MAXPDSTRING];
-    wchar_t ucs2mode[MAXPDSTRING];
+    //wchar_t ucs2buf[MAXPDSTRING];
+    //wchar_t ucs2mode[MAXPDSTRING];
     sys_bashfilename(filename, namebuf);
-    u8_utf8toucs2(ucs2buf, MAXPDSTRING, namebuf, MAXPDSTRING-1);
+    // u8_utf8toucs2(ucs2buf, MAXPDSTRING, namebuf, MAXPDSTRING-1);
     /* mode only uses ASCII, so no need for a full conversion, just copy it */
-    mbstowcs(ucs2mode, mode, MAXPDSTRING);
-    return (_wfopen(ucs2buf, ucs2mode));
+    //mbstowcs(ucs2mode, mode, MAXPDSTRING);
+
+    //return (_wfopen(ucs2buf, ucs2mode));
+    return sys_fs_fopen(namebuf, mode);
 }
 #else
 #include <stdarg.h>
@@ -452,10 +454,10 @@ int sys_open(const char *path, int oflag, ...)
         imode = va_arg (ap, int);
         mode = (mode_t)imode;
         va_end(ap);
-        fd = open(pathbuf, oflag, mode);
+        fd = sys_fs_open(pathbuf, oflag, mode);
     }
     else
-        fd = open(pathbuf, oflag);
+        fd = sys_fs_open(pathbuf, oflag);
     return fd;
 }
 
@@ -463,7 +465,7 @@ FILE *sys_fopen(const char *filename, const char *mode)
 {
   char namebuf[MAXPDSTRING];
   sys_bashfilename(filename, namebuf);
-  return fopen(namebuf, mode);
+  return sys_fs_fopen(namebuf, mode);
 }
 #endif /* _WIN32 */
 
@@ -472,16 +474,12 @@ FILE *sys_fopen(const char *filename, const char *mode)
    across dll-boundaries, but we provide it for other platforms as well */
 int sys_close(int fd)
 {
-#ifdef _WIN32
-    return _close(fd);  /* Bill Gates is a big fat hen */
-#else
-    return close(fd);
-#endif
+    return sys_fs_close(fd);
 }
 
 int sys_fclose(FILE *stream)
 {
-    return fclose(stream);
+    return sys_fs_fclose(stream);
 }
 
     /* Open a help file using the help search path.  We expect the ".pd"
@@ -518,3 +516,153 @@ gotone:
     close (fd);
     glob_evalfile(0, gensym((char*)basename), gensym(dirbuf));
 }
+
+#ifdef PDCUSTOMFS
+
+EXTERN t_fsopen g_fs_open_func;
+EXTERN t_fsseek g_fs_seek_func;
+EXTERN t_fstell g_fs_tell_func;
+EXTERN t_fswrite g_fs_write_func;
+EXTERN t_fsread g_fs_read_func;
+EXTERN t_fsclose g_fs_close_func;
+
+EXTERN t_fsfopen g_fs_fopen_func;
+EXTERN t_fsfseek g_fs_fseek_func;
+EXTERN t_fsftell g_fs_ftell_func;
+EXTERN t_fsfwrite g_fs_fwrite_func;
+EXTERN t_fsfread g_fs_fread_func;
+EXTERN t_fsfflush g_fs_fflush_func;
+EXTERN t_fsfclose g_fs_fclose_func;
+
+#ifdef DEBUG_CUSTOM_FS
+#define _T(...) printf(__VA_ARGS__)
+#else
+#define _T(...) ((void*)0)
+#endif
+
+#define _C(func, ...) _T("%s\n", #func); if (func) { return func(__VA_ARGS__); } do {} while(0)
+
+int sys_fs_open(const char* filename, int flags, int mode)
+{
+    _C(g_fs_open_func, filename, flags, mode);
+    return 1;
+}
+
+FILE* sys_fs_fopen(const char* filename, const char* mode)
+{
+    _C(g_fs_fopen_func, filename, mode);
+    return NULL;
+}
+
+int sys_fs_seek(int fd, long offset, int origin)
+{
+    _C(g_fs_seek_func, fd, offset, origin);
+    return lseek(fd, offset, origin);
+}
+
+int sys_fs_fseek(FILE* fd, long offset, int origin)
+{
+    _C(g_fs_fseek_func, fd, offset, origin);
+    return fseek(fd, offset, origin);
+}
+
+long sys_fs_tell(int fd)
+{
+    _C(g_fs_tell_func, fd);
+    return tell(fd);
+}
+
+size_t sys_fs_ftell(FILE* fd)
+{
+    _C(g_fs_ftell_func, fd);
+    return ftell(fd);
+}
+
+size_t sys_fs_write(int fd, void* data, size_t len)
+{
+    _C(g_fs_write_func, data, len, fd);
+    return write(fd, data, len);
+}
+
+size_t sys_fs_fwrite(void* data, size_t len, size_t count, FILE* fd)
+{
+    _C(g_fs_fwrite_func, data, len, count, fd);
+    return fwrite(data, len, count, fd);
+}
+
+size_t sys_fs_read(int fd, void* data, size_t len)
+{
+    _C(g_fs_read_func, data, len, fd);
+    return read(fd, data, len);
+}
+
+size_t sys_fs_fread(void* data, size_t len, size_t count, FILE* fd)
+{
+    _C(g_fs_fread_func, data, len, count, fd);
+    return fread(data, len, count, fd);
+}
+
+int sys_fs_putc(int c, FILE* fd)
+{
+    _C(g_fs_fwrite_func, &c, sizeof(c), 1, fd);
+    return putc(c, fd);
+}
+
+int sys_fs_getc(FILE* fd)
+{
+    if (g_fs_fread_func)
+    {
+        int c = EOF;
+        g_fs_fread_func(&c, sizeof(c), 1, fd);
+        return c;
+    }
+
+    return getc(fd);
+}
+
+int sys_fs_fflush(FILE* fd)
+{
+    _C(g_fs_fflush_func, fd);
+    return fflush(fd);
+}
+
+FILE* sys_fs_fdopen(int fd, const char* mode)
+{
+    _C(sys_fs_fdopen, fd, mode);
+    return fdopen(fd, mode);
+}
+
+void _putchar(char character)
+{
+    putc(character, stdout);
+}
+
+void sys_fprintf_wrapper(char character, void* arg)
+{
+    FILE* f = (FILE*)arg;
+    sys_fs_putc(character, f);
+}
+
+int sys_fs_fscanf(FILE* fd, const char* format, ...)
+{
+    return 0;
+}
+
+int sys_fs_close(int fd)
+{
+    _C(g_fs_close_func, fd);
+
+#ifdef _WIN32
+    return _close(fd);  /* Bill Gates is a big fat hen */
+#else
+    return close(fd);
+#endif
+}
+
+int sys_fs_fclose(FILE* fd)
+{
+    _C(g_fs_fclose_func, fd);
+    return fclose(fd);
+}
+
+#endif //PDCUSTOMFS

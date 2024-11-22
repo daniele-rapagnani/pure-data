@@ -807,19 +807,19 @@ int binbuf_read(t_binbuf *b, const char *filename, const char *dirname, int crfl
         perror(namebuf);
         return (1);
     }
-    if ((length = (long)lseek(fd, 0, SEEK_END)) < 0 || lseek(fd, 0, SEEK_SET) < 0
+    if ((length = (long)sys_fs_seek(fd, 0, SEEK_END)) < 0 || sys_fs_seek(fd, 0, SEEK_SET) < 0
         || !(buf = t_getbytes(length)))
     {
         fprintf(stderr, "lseek: ");
         perror(namebuf);
-        close(fd);
+        sys_fs_close(fd);
         return(1);
     }
-    if ((readret = (int)read(fd, buf, length)) < length)
+    if ((readret = (int)sys_fs_read(fd, buf, length)) < length)
     {
         fprintf(stderr, "read (%d %ld) -> %d\n", fd, length, readret);
         perror(namebuf);
-        close(fd);
+        sys_fs_close(fd);
         t_freebytes(buf, length);
         return(1);
     }
@@ -838,7 +838,7 @@ int binbuf_read(t_binbuf *b, const char *filename, const char *dirname, int crfl
 #endif
 
     t_freebytes(buf, length);
-    close(fd);
+    sys_fs_close(fd);
     return (0);
 }
 
@@ -917,7 +917,7 @@ int binbuf_write(const t_binbuf *x, const char *filename, const char *dir, int c
         else length = 40;
         if (ep - bp < length)
         {
-            if (fwrite(sbuf, bp-sbuf, 1, f) < 1)
+            if (sys_fs_fwrite(sbuf, bp-sbuf, 1, f) < 1)
                 goto fail;
             bp = sbuf;
         }
@@ -938,21 +938,21 @@ int binbuf_write(const t_binbuf *x, const char *filename, const char *dir, int c
             *bp++ = ' ';
         }
     }
-    if (fwrite(sbuf, bp-sbuf, 1, f) < 1)
+    if (sys_fs_fwrite(sbuf, bp-sbuf, 1, f) < 1)
         goto fail;
 
-    if (fflush(f) != 0)
+    if (sys_fs_fflush(f) != 0)
         goto fail;
 
     if (y)
         binbuf_free(y);
-    fclose(f);
+    sys_fs_fclose(f);
     return (0);
 fail:
     if (y)
         binbuf_free(y);
     if (f)
-        fclose(f);
+        sys_fs_fclose(f);
     return (1);
 }
 

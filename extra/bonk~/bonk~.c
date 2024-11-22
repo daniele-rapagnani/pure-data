@@ -1001,7 +1001,7 @@ static void bonk_read(t_bonk *x, t_symbol *s)
 
     if ((filedesc = canvas_open(x->x_canvas,
             s->s_name, "", buf, &bufptr, MAXPDSTRING, 0)) < 0 
-                || !(fd = fdopen(filedesc, "r")))
+                || !(fd = sys_fs_fdopen(filedesc, "r")))
     {
         post("%s: open failed", s->s_name);
         return;
@@ -1031,7 +1031,7 @@ nomore:
     }
     post("bonk: read %d templates\n", ntemplate);
     x->x_ntemplate = ntemplate;
-    fclose(fd);
+    sys_fs_fclose(fd);
 }
 #endif
 
@@ -1164,11 +1164,11 @@ static void bonk_write(t_bonk *x, t_symbol *s)
     for (; ntemplate--; tp++)
     {
         for (i = x->x_nfilters, fp = tp->t_amp; i--; fp++)
-            fprintf(fd, "%6.2f ", *fp);
-        fprintf(fd, "\n");
+            sys_fs_fprintf(fd, "%6.2f ", *fp);
+        sys_fs_fprintf(fd, "\n");
     }
     post("bonk: wrote %d templates\n", x->x_ntemplate);
-    fclose(fd);
+    sys_fs_fclose(fd);
 }
 #endif
 

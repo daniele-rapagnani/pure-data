@@ -85,16 +85,16 @@ static void stdout_binary(t_stdout *x, int argc, t_atom *argv)
 
 static void pd_tilde_putfloat(float f, FILE *fd)
 {
-    putc(A_FLOAT, fd);
-    fwrite(&f, sizeof(f), 1, fd);
+    sys_fs_putc(A_FLOAT, fd);
+    sys_fs_fwrite(&f, sizeof(f), 1, fd);
 }
 
 static void pd_tilde_putsymbol(t_symbol *s, FILE *fd)
 {
     const char *sp = s->s_name;
-    putc(A_SYMBOL, fd);
+    sys_fs_putc(A_SYMBOL, fd);
     do
-        putc(*sp, fd);
+        sys_fs_putc(*sp, fd);
     while (*sp++);
 }
 

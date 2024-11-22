@@ -401,11 +401,11 @@ static FILE *barf_fd;
 void barf(const char *s)
 {
     if (!barf_fd)
-        barf_fd = fopen("/tmp/foo.txt", "w");
+        barf_fd = sys_fs_fopen("/tmp/foo.txt", "w");
     if (barf_fd)
     {
-        fprintf(barf_fd, "%s\n", s);
-        fflush(barf_fd);
+        sys_fs_fprintf(barf_fd, "%s\n", s);
+        sys_fs_fflush(barf_fd);
     }
 }
 
@@ -430,16 +430,16 @@ void barf2(const char *s, int n1, int n2)
 
 int barf_getc(FILE *fd)
 {
-    int poodle = getc(fd);
+    int poodle = sys_fs_getc(fd);
 #if 0
     if (poodle < 0)
         barf("barf_getc oops");
     else
     {
         if (!barf_fd)
-            barf_fd = fopen("/tmp/foo.txt", "w");
+            barf_fd = sys_fs_fopen("/tmp/foo.txt", "w");
         if (barf_fd)
-            putc(poodle, barf_fd);
+            sys_fs_putc(poodle, barf_fd);
     }
 #endif
     return (poodle);
@@ -497,13 +497,13 @@ static int pd_tilde_readmessages(t_pd_tilde *x, FILE *infd)
             char msgbuf[MAXPDSTRING];
             int c, infill = 0, n;
             t_atom *vec;
-            while (isspace((c = getc(infd))) && c != EOF)
+            while (isspace((c = sys_fs_getc(infd))) && c != EOF)
                 ;
             if (c == EOF)
                 return 0;
             do
                 msgbuf[infill++] = c;
-            while (!isspace((c = getc(infd))) && c != ';' && c != EOF
+            while (!isspace((c = sys_fs_getc(infd))) && c != ';' && c != EOF
                 && infill < MAXPDSTRING-1) ;
             if (c == ';' && infill < MAXPDSTRING-1)
                 msgbuf[infill++] = c;
@@ -722,17 +722,17 @@ gotone:
         if (pipe1[0] != 0)
         {
             dup2(pipe1[0], 0);
-            close(pipe1[0]);
+            sys_fs_close(pipe1[0]);
         }
         if (pipe2[1] != 1)
         {
             dup2(pipe2[1], 1);
-            close(pipe2[1]);
+            sys_fs_close(pipe2[1]);
         }
         if (pipe1[1] >= 2)
-            close(pipe1[1]);
+            sys_fs_close(pipe1[1]);
         if (pipe2[0] >= 2)
-            close(pipe2[0]);
+            sys_fs_close(pipe2[0]);
         execv(cmdbuf, execargv);
         _exit(1);
     }
@@ -741,14 +741,14 @@ gotone:
 
 #endif /* _WIN32 */
         /* done with fork/exec or spawn; parent continues here */
-    close(pipe1[0]);
-    close(pipe2[1]);
+    sys_fs_close(pipe1[0]);
+    sys_fs_close(pipe2[1]);
 #ifndef _WIN32      /* this was done in windows via the O_NOINHERIT flag */
     fcntl(pipe1[1],  F_SETFD, FD_CLOEXEC);
     fcntl(pipe2[0],  F_SETFD, FD_CLOEXEC);
 #endif
-    outfd = fdopen(pipe1[1], "w");
-    infd = fdopen(pipe2[0], "r");
+    outfd = sys_fs_fdopen(pipe1[1], "w");
+    infd = sys_fs_fdopen(pipe2[0], "r");
     x->x_childpid = pid;
     for (i = 0; i < fifo; i++)
         if (x->x_binary)
@@ -757,9 +757,9 @@ gotone:
         pd_tilde_putfloat(0, outfd);
         pd_tilde_putsemi(outfd);
     }
-    else fprintf(outfd, "%s", ";\n0;\n");
+    else sys_fs_fprintf(outfd, "%s", ";\n0;\n");
 
-    fflush(outfd);
+    sys_fs_fflush(outfd);
     binbuf_clear(x->x_binbuf);
     pd_tilde_readmessages(x, infd);
     x->x_outfd = outfd;
@@ -767,14 +767,14 @@ gotone:
     return;
 #ifndef _WIN32
 fail3:
-    close(pipe2[0]);
-    close(pipe2[1]);
+    sys_fs_close(pipe2[0]);
+    sys_fs_close(pipe2[1]);
     if (x->x_childpid > 0)
     waitpid(x->x_childpid, 0, 0);
 #endif
 fail2:
-    close(pipe1[0]);
-    close(pipe1[1]);
+    sys_fs_close(pipe1[0]);
+    sys_fs_close(pipe1[1]);
 fail1:
     x->x_infd = x->x_outfd = 0;
     x->x_childpid = -1;
@@ -830,20 +830,20 @@ static void pd_tilde_doperf(t_pd_tilde *x)
     }
     else
     {
-        fprintf(x->x_outfd, ";\n");
+        sys_fs_fprintf(x->x_outfd, ";\n");
         if (!x->x_ninsig)
-            fprintf(x->x_outfd, "0\n");
+            sys_fs_fprintf(x->x_outfd, "0\n");
         else for (i = 0; i < x->x_ninsig; i++)
         {
             t_pdsample *fp = x->x_insig[i];
             for (j = 0; j < n; j++)
-                fprintf(x->x_outfd, "%g\n", *fp++);
+                sys_fs_fprintf(x->x_outfd, "%g\n", *fp++);
             for (; j < DEFDACBLKSIZE; j++)
-                fprintf(x->x_outfd, "0\n");
+                sys_fs_fprintf(x->x_outfd, "0\n");
         }
-        fprintf(x->x_outfd, ";\n");
+        sys_fs_fprintf(x->x_outfd, ";\n");
     }
-    fflush(x->x_outfd);
+    sys_fs_fflush(x->x_outfd);
     nsigs = j = 0;
     if (x->x_binary)
     {
@@ -876,7 +876,7 @@ static void pd_tilde_doperf(t_pd_tilde *x)
         {
             while (1)
             {
-                c = getc(x->x_infd);
+                c = sys_fs_getc(x->x_infd);
                 if (c == EOF)
                 {
                     if (errno)
@@ -1091,17 +1091,17 @@ static void pd_tilde_anything(t_pd_tilde *x, t_symbol *s,
             else if (argv->a_type == A_SYMBOL)
                 pd_tilde_putsymbol(argv->a_w.w_symbol, x->x_outfd);
         }
-        putc(A_SEMI, x->x_outfd);
+        sys_fs_putc(A_SEMI, x->x_outfd);
     }
     else
     {
-        fprintf(x->x_outfd, "%s ", s->s_name);
+        sys_fs_fprintf(x->x_outfd, "%s ", s->s_name);
         while (argc--)
         {
             atom_string(argv++, msgbuf, MAXPDSTRING);
-            fprintf(x->x_outfd, "%s ", msgbuf);
+            sys_fs_fprintf(x->x_outfd, "%s ", msgbuf);
         }
-        fprintf(x->x_outfd, ";\n");
+        sys_fs_fprintf(x->x_outfd, ";\n");
     }
 }
 
@@ -1337,7 +1337,7 @@ static void pd_tilde_anything(t_pd_tilde *x, t_symbol *s, long ac, t_atom *av)
             av++;
         }
         critical_enter(0);
-        fprintf(x->x_outfd, "%s;\n", msgbuf);
+        sys_fs_fprintf(x->x_outfd, "%s;\n", msgbuf);
         critical_exit(0);
     }
 }

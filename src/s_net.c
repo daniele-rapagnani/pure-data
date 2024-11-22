@@ -308,7 +308,7 @@ void socket_close(int socket)
     closesocket(socket);
 #else
     if (socket < 0) return;
-    close(socket);
+   sys_fs_close(socket);
 #endif
 }
 

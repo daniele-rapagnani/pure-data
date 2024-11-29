@@ -281,7 +281,8 @@ int sys_trytoopenone(const char *dir, const char *name, const char* ext,
     if ((fd=sys_open(dirresult, O_RDONLY)) >= 0)
     {
             /* in unix, further check that it's not a directory */
-#ifdef HAVE_UNISTD_H
+            // Too much effort needed to implement fstat, just skipping this check
+#if 0
         struct stat statbuf;
         int ok =  ((fstat(fd, &statbuf) >= 0) &&
             !S_ISDIR(statbuf.st_mode));

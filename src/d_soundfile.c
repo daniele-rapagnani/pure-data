@@ -217,16 +217,16 @@ static int ascii_addextension(char *filename, size_t size)
 
 ssize_t fd_read(int fd, off_t offset, void *dst, size_t size)
 {
-    if (lseek(fd, offset, SEEK_SET) != offset)
+    if (sys_fs_seek(fd, offset, SEEK_SET) != offset)
         return -1;
-    return read(fd, dst, size);
+    return sys_fs_read(fd, dst, size);
 }
 
 ssize_t fd_write(int fd, off_t offset, const void *src, size_t size)
 {
-    if (lseek(fd, offset, SEEK_SET) != offset)
+    if (sys_fs_seek(fd, offset, SEEK_SET) != offset)
         return -1;
-    return write(fd, src, size);
+    return sys_fs_write(fd, src, size);
 }
 
 /* ----- byte swappers ----- */
@@ -328,7 +328,7 @@ int open_soundfile_via_fd(int fd, t_soundfile *sf, size_t skipframes)
     if (sf->sf_headersize >= 0) /* header detection overridden */
     {
             /* interpret data size from file size */
-        ssize_t bytelimit = lseek(fd, 0, SEEK_END);
+        ssize_t bytelimit = sys_fs_seek(fd, 0, SEEK_END);
         if (bytelimit < 0)
             goto badheader;
         if (bytelimit > SFMAXBYTES || bytelimit < 0)
@@ -339,7 +339,7 @@ int open_soundfile_via_fd(int fd, t_soundfile *sf, size_t skipframes)
     else
     {
         char buf[SFHDRBUFSIZE];
-        ssize_t bytesread = read(fd, buf, sf_minheadersize);
+        ssize_t bytesread = sys_fs_read(fd, buf, sf_minheadersize);
 
         if (!sf->sf_type)
         {
@@ -370,7 +370,7 @@ int open_soundfile_via_fd(int fd, t_soundfile *sf, size_t skipframes)
         sf->sf_fd = fd;
 
             /* rewind and read header */
-        if (lseek(sf->sf_fd, 0, SEEK_SET) < 0)
+        if (sys_fs_seek(sf->sf_fd, 0, SEEK_SET) < 0)
             goto badheader;
         if (!sf->sf_type->t_readheaderfn(sf))
             goto badheader;
@@ -378,7 +378,7 @@ int open_soundfile_via_fd(int fd, t_soundfile *sf, size_t skipframes)
 
         /* seek past header and any sample frames to skip */
     offset = sf->sf_headersize + (skipframes * sf->sf_bytesperframe);
-    if (lseek(sf->sf_fd, offset, 0) < offset)
+    if (sys_fs_seek(sf->sf_fd, offset, 0) < offset)
         goto badheader;
     sf->sf_bytelimit -= skipframes * sf->sf_bytesperframe;
     if (sf->sf_bytelimit < 0)
@@ -1323,7 +1323,7 @@ static void soundfiler_read(t_soundfiler *x, t_symbol *s,
     {
         size_t thisread = finalsize - framesread;
         thisread = (thisread > bufframes ? bufframes : thisread);
-        nframes = read(sf.sf_fd, sampbuf,
+        nframes = sys_fs_read(sf.sf_fd, sampbuf,
             thisread * sf.sf_bytesperframe) / sf.sf_bytesperframe;
         if (nframes <= 0) break;
         soundfile_xferin_words(&sf, argc, vecs, framesread,
@@ -1858,7 +1858,7 @@ static void *readsf_child_main(void *zz)
                 buf = x->x_buf;
                 fifohead = x->x_fifohead;
                 pthread_mutex_unlock(&x->x_mutex);
-                bytesread = read(sf.sf_fd, buf + fifohead, wantbytes);
+                bytesread = sys_fs_read(sf.sf_fd, buf + fifohead, wantbytes);
                 pthread_mutex_lock(&x->x_mutex);
                 if (x->x_requestcode != REQUEST_BUSY)
                     break;

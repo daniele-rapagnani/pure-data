@@ -110,6 +110,7 @@
 #define FLAGS_LONG_LONG (1U <<  9U)
 #define FLAGS_PRECISION (1U << 10U)
 #define FLAGS_ADAPT_EXP (1U << 11U)
+#define FLAGS_NO_TRAIL0 (1U << 12U)
 
 
 // import float.h for DBL_MAX
@@ -408,7 +409,7 @@ static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
       ++whole;
     }
   }
-  else {
+  else if (frac > 0 || !(flags & FLAGS_NO_TRAIL0)) {
     unsigned int count = prec;
     // now do fractional part, as an unsigned number
     while (len < PRINTF_FTOA_BUFFER_SIZE) {
@@ -531,6 +532,11 @@ static size_t _etoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
         --prec;
       }
     }
+  }
+
+  if (flags & FLAGS_NO_TRAIL0 && flags & FLAGS_HASH) {
+      // if hash is specified the standard dictates trailing zeros should be re-enabled
+      flags &= (~FLAGS_NO_TRAIL0);
   }
 
   // will everything fit?
@@ -766,7 +772,7 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const
       case 'E':
       case 'g':
       case 'G':
-        if ((*format == 'g')||(*format == 'G')) flags |= FLAGS_ADAPT_EXP;
+        if ((*format == 'g')||(*format == 'G')) flags |= (FLAGS_ADAPT_EXP | FLAGS_NO_TRAIL0);
         if ((*format == 'E')||(*format == 'G')) flags |= FLAGS_UPPERCASE;
         idx = _etoa(out, buffer, idx, maxlen, va_arg(va, double), precision, width, flags);
         format++;

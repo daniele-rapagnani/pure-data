@@ -1521,7 +1521,7 @@ size_t soundfiler_dowrite(void *obj, t_canvas *canvas,
         datasize = sf->sf_bytesperframe * thiswrite;
         soundfile_xferout_words(sf, vectors, (unsigned char *)sampbuf,
             thiswrite, wa.wa_onsetframes, normfactor);
-        byteswritten = write(sf->sf_fd, sampbuf, datasize);
+        byteswritten = sys_fs_write(sf->sf_fd, sampbuf, datasize);
         if (byteswritten < 0 || (size_t)byteswritten < datasize)
         {
             object_sferror(obj, "soundfiler write",

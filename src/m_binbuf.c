@@ -854,7 +854,7 @@ int binbuf_read_via_canvas(t_binbuf *b, const char *filename,
         pd_error(0, "%s: can't open", filename);
         return (1);
     }
-    else close (filedesc);
+    else sys_close (filedesc);
     if (binbuf_read(b, bufptr, buf, crflag))
         return (1);
     else return (0);
@@ -872,7 +872,7 @@ int binbuf_read_via_path(t_binbuf *b, const char *filename, const char *dirname,
         pd_error(0, "%s: can't open", filename);
         return (1);
     }
-    else close (filedesc);
+    else sys_close (filedesc);
     if (binbuf_read(b, bufptr, buf, crflag))
         return (1);
     else return (0);

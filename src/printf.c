@@ -526,7 +526,12 @@ static size_t _etoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
       minwidth = 0U;
       expval   = 0;
     }
-    else {
+    else if (value >= 0.0f && value <= FLT_EPSILON) {
+        // special case for 0 since the exponent is has rounding errors
+        minwidth = 0;
+        expval = 0;
+        prec = 0;
+    } else {
       // we use one sigfig for the whole part
       if ((prec > 0) && (flags & FLAGS_PRECISION)) {
         --prec;

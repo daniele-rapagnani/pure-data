@@ -982,6 +982,7 @@ static void file_isdirectory_symbol(t_file_handle*x, t_symbol*filename) {
 }
 
     /* ================ [file glob] ====================== */
+#if 0
 #ifdef _WIN32
 /* idiosyncrasies:
  * - cases are ignored ('a*' matches 'A.txt' and 'a.txt'), even with wine on ext4
@@ -1169,6 +1170,90 @@ static void file_glob_symbol(t_file_handle*x, t_symbol*spattern) {
     globfree(&gg);
 }
 #endif /* _WIN32 */
+#endif /* #if 0 -- replaced by virtual filesystem glob below */
+
+typedef struct _file_glob_ctx
+{
+    t_file_handle* x;
+    int onlydirs;
+} t_file_glob_ctx;
+
+static void file_glob_cb(void* userdata, const char* path, int isdir)
+{
+    t_file_glob_ctx* ctx = (t_file_glob_ctx*)userdata;
+    t_atom outv[2];
+
+    if (ctx->onlydirs && !isdir)
+    {
+        return;
+    }
+
+    SETSYMBOL(outv + 0, gensym(path));
+    SETFLOAT(outv + 1, isdir);
+    outlet_list(ctx->x->x_dataout, gensym("list"), 2, outv);
+}
+
+static void file_glob_symbol(t_file_handle* x, t_symbol* spattern)
+{
+    char pattern[MAXPDSTRING];
+    size_t patternlen;
+    t_file_glob_ctx ctx;
+    int matchdot = 0;
+    int result;
+
+    strncpy(pattern, spattern->s_name, MAXPDSTRING - 1);
+    pattern[MAXPDSTRING - 1] = 0;
+    patternlen = strlen(pattern);
+
+    if (!strcmp(".", pattern) || !strcmp("./", pattern)
+        || str_endswith(pattern, "/.") || str_endswith(pattern, "/./"))
+    {
+        matchdot = 1;
+    }
+    else if (!strcmp("..", pattern) || !strcmp("../", pattern)
+        || str_endswith(pattern, "/..") || str_endswith(pattern, "/../"))
+    {
+        matchdot = 2;
+    }
+
+    if (matchdot)
+    {
+        struct stat sb;
+        if (!do_file_stat(0, pattern, &sb, 0))
+        {
+            t_atom outv[2];
+            size_t end = strlen(pattern);
+            if (end > 0 && '/' == pattern[end - 1])
+            {
+                pattern[end - 1] = 0;
+            }
+            SETSYMBOL(outv + 0, gensym(pattern));
+            SETFLOAT(outv + 1, S_ISDIR(sb.st_mode));
+            outlet_list(x->x_dataout, gensym("list"), 2, outv);
+        }
+        else
+        {
+            outlet_bang(x->x_infoout);
+        }
+        return;
+    }
+
+    ctx.x = x;
+    ctx.onlydirs = (patternlen > 0 && '/' == pattern[patternlen - 1]);
+    if (ctx.onlydirs)
+    {
+        while (patternlen > 0 && '/' == pattern[patternlen - 1])
+        {
+            pattern[--patternlen] = 0;
+        }
+    }
+
+    result = sys_fs_glob(pattern, file_glob_cb, &ctx);
+    if (result <= 0)
+    {
+        outlet_bang(x->x_infoout);
+    }
+}
 
 
     /* ================ [file which] ====================== */

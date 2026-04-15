@@ -620,6 +620,9 @@ typedef int (*t_fsfflush)(FILE* fd);
 typedef FILE* (*t_fsfdopen)(int fd, const char* mode);
 typedef int (*t_fsfclose)(FILE* fd);
 
+typedef void (*t_fsglob_callback)(void* userdata, const char* path, int isdir);
+typedef int (*t_fsglob)(const char* pattern, t_fsglob_callback cb, void* userdata);
+
 EXTERN int sys_fs_open(const char* filename, int mode, int flags);
 EXTERN int sys_fs_seek(int fd, long offset, int origin);
 EXTERN long sys_fs_tell(int fd);
@@ -638,6 +641,8 @@ EXTERN int sys_fs_fclose(FILE* fd);
 EXTERN FILE* sys_fs_fdopen(int fd, const char* mode);
 EXTERN int sys_fs_fflush(FILE* fd);
 EXTERN void sys_fprintf_wrapper(char character, void* arg);
+
+EXTERN int sys_fs_glob(const char* pattern, t_fsglob_callback cb, void* userdata);
 
 #define sys_va_args_wrap(...) , ##__VA_ARGS__
 #define sys_fs_fprintf(f, format, ...) fctprintf(&sys_fprintf_wrapper, f, format sys_va_args_wrap(__VA_ARGS__))

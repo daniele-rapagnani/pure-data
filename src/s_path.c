@@ -535,6 +535,8 @@ EXTERN t_fsfread g_fs_fread_func;
 EXTERN t_fsfflush g_fs_fflush_func;
 EXTERN t_fsfclose g_fs_fclose_func;
 
+EXTERN t_fsglob g_fs_glob_func;
+
 #ifdef DEBUG_CUSTOM_FS
 #define _T(...) printf(__VA_ARGS__)
 #else
@@ -668,6 +670,12 @@ int sys_fs_fclose(FILE* fd)
 {
     _C(g_fs_fclose_func, fd);
     return fclose(fd);
+}
+
+int sys_fs_glob(const char* pattern, t_fsglob_callback cb, void* userdata)
+{
+    _C(g_fs_glob_func, pattern, cb, userdata);
+    return -1;
 }
 
 #endif //PDCUSTOMFS

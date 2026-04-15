@@ -25,7 +25,7 @@ void sys_setextrapath(const char *p);
 extern int sys_usestdpath;
 int sys_open_absolute(const char *name, const char* ext,
     char *dirresult, char **nameresult, unsigned int size, int bin, int *fdp);
-int sys_trytoopenone(const char *dir, const char *name, const char* ext,
+EXTERN int sys_trytoopenone(const char *dir, const char *name, const char* ext,
     char *dirresult, char **nameresult, unsigned int size, int bin);
 t_symbol *sys_decodedialog(t_symbol *s);
 

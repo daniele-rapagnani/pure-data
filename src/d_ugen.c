@@ -701,7 +701,7 @@ void ugen_start(void)
     if (THIS->u_context) bug("ugen_start");
 }
 
-int ugen_getsortno(void)
+EXTERN int ugen_getsortno(void)
 {
     return (THIS->u_sortno);
 }

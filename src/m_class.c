@@ -924,6 +924,7 @@ void new_anything(void *dummy, t_symbol *s, int argc, t_atom *argv)
         tryingalready++;
         typedmess(dummy, s, argc, argv);
         tryingalready--;
+        pd_globalunlock();
         return;
     }
     class_loadsym = 0;
